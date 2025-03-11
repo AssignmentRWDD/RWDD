@@ -18,3 +18,4 @@ CREATE TABLE login_attempts (
     password VARCHAR(255) NOT NULL,
     attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
