@@ -1,10 +1,18 @@
 <?php
 // store_data.php
 
-// EC2 instance details
-$ec2_host = 'ip-172-31-9-198'; // Your EC2 instance address
-$ec2_user = 'ec2-user';
-$ec2_keyfile = '/c/Users/HP/Downloads/rwdd.pem';
+$servername = "localhost";
+$username = "root"; // change this to your MySQL username
+$password = ""; // change this to your MySQL password
+$dbname = "fitfocus"; // change this to your database name
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['name'])) {
@@ -19,43 +27,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $height = $_POST['height'];
         $first_time = $_POST['first_time'];
 
-        $data = json_encode([
-            'name' => $name,
-            'email' => $email,
-            'username' => $username,
-            'password' => $password,
-            'age' => $age,
-            'gender' => $gender,
-            'weight' => $weight,
-            'height' => $height,
-            'first_time' => $first_time
-        ]);
+        $sql = "INSERT INTO users (name, email, username, password, age, gender, weight, height, first_time)
+                VALUES ('$name', '$email', '$username', '$password', '$age', '$gender', '$weight', '$height', '$first_time')";
 
-        $file_path = '/home/ec2-user/customer_details.txt';
+        if ($conn->query($sql) === TRUE) {
+            echo "Sign up data stored successfully.";
+        } else {
+            echo "Error: " . $sql . "<br>" . $conn->error;
+        }
     } else {
         // Handle login data
         $username = $_POST['username'];
         $password = $_POST['password'];
 
-        $data = json_encode([
-            'username' => $username,
-            'password' => $password
-        ]);
+        $sql = "INSERT INTO login_attempts (username, password)
+                VALUES ('$username', '$password')";
 
-        $file_path = '/home/ec2-user/login_attempts.txt';
+        if ($conn->query($sql) === TRUE) {
+            echo "Login data stored successfully.";
+        } else {
+            echo "Error: " . $sql . "<br>" . $conn->error;
+        }
     }
-
-    // Set up the SSH connection
-    $connection = ssh2_connect($ec2_host, 22);
-    ssh2_auth_pubkey_file($connection, $ec2_user, $ec2_keyfile . '.pub', $ec2_keyfile);
-
-    // Store data on EC2 instance
-    $stream = ssh2_exec($connection, 'echo ' . escapeshellarg($data) . ' >> ' . $file_path);
-    stream_set_blocking($stream, true);
-
-    $output = stream_get_contents($stream);
-    fclose($stream);
-
-    echo "Data stored successfully on EC2 instance.";
 }
+
+$conn->close();
 ?>
